@@ -1,0 +1,88 @@
+* {
+    font-family: "Brush Script MT", cursive;
+}
+
+.container-header {
+    display: flex;
+    background-color: blueviolet;
+}
+
+h1 {
+    font-family: "Brush Script MT", cursive;
+    font-size: 5rem;
+    color: limegreen;
+    margin: auto;
+    padding: 1rem;
+}
+
+.container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+#gallery {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#gallery img {
+    max-height: calc(33vw);
+    margin: auto;
+}
+
+.nav-menu {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+}
+
+.nav-menu ul, .contextmenu {
+    list-style-type: none;
+    border-radius: .5rem;
+    padding: 0;
+}
+
+.contextmenu {
+    display: flex;
+    max-width: 20rem;
+    flex-wrap: wrap;
+}
+
+.nav-menu li, .contextmenu li {
+    background-color: limegreen;
+    border: .1em solid blueviolet;
+    border-radius: .5rem;
+    box-shadow: 0 .5rem 1rem blueviolet;
+    padding: .5rem 0;
+    text-align: center;
+    transition: 0.5s linear;
+    font-size: 1.5rem;
+}
+
+.nav-menu li:hover, .contextmenu li:hover {
+    background: blueviolet;
+}
+
+#file-input {
+    display: none;
+}
+
+.blinking-border {
+    box-shadow: 0 .5rem 1rem red;
+    animation: blink 1s linear infinite;
+}
+
+@keyframes blink {
+    0% {
+        border-style: dashed;
+        border-color: rgb(196, 60, 196);
+    }
+    50% {
+        border-style: solid;
+        border-color: rgb(90, 13, 90);
+    }
+    100% {
+        border-style: dashed;
+        border-color: rgb(247, 6, 6);
+    }
+}
