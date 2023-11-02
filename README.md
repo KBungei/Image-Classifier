@@ -4,6 +4,7 @@ I included adding captions and tags to images and functionality to search for im
 Future versions will include browser's indexeddb functionality
 
 Currently WebApp works better on desktop
+Click "Add+" button to open file dialog, select and open multiple images
 Click on image to open larger view, use left/right to navigate prev/next images
 
 WebApp deployed here:
