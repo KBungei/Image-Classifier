@@ -9,12 +9,15 @@
 <body>
     <header>
         <div class="container-header">
-            <h1>Image Gallery</h1>
+            <h1>
+                <span>Image</span>
+                <span>Gallery</span>
+            </h1>
         </div>
     </header>
 
     <main>
-        <div class="container">
+        <div class="main-container">
             <input type="file" id="file-input" accept="image/*" hidden multiple>
             <Nav class="nav-menu">
                 <ul>
@@ -25,13 +28,14 @@
                     <li id="add-button">Add &#43;</li>
                 </ul>
             </Nav>
-
+            
             <div id="gallery"></div>
         </div>
     </main>
 
     <footer></footer>
     
+    <script type="module" src="modules/larger-view-elem.mjs"></script>
     <script type="module" src="modules/image-ctxmenu.mjs"></script>
     <script type="module" src="modules/gallery-os.mjs"></script>
     <script type="module" src="modules/image-data.mjs"></script>

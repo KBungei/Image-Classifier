@@ -1,16 +1,26 @@
 import { ImageData } from "./image-data.mjs";
 import { ImageCtxMenu, removeCMIfExists } from "./image-ctxmenu.mjs";
 
+function asyncAlert(message) {
+    return new Promise((resolve, reject) => {
+        alert(message);
+
+        resolve();
+    });
+}
+
 export class GalleryOS {
-    constructor(gallery, searchBtn, displAllBtn) {
+    constructor(gallery, searchBtn, displAllBtn, largeViewCont) {
         this.galleryElem = gallery; // images container
         this.searchBtnElem = searchBtn; // search btn
         this.displAllBtn = displAllBtn;
+        this.largeViewCont = largeViewCont;
         this.cache = [];
         this.selected = [];
+        this.mode;
 
         // to clear imagectx menus
-        document.body.addEventListener('click',() => {
+        document.body.addEventListener('click', () => {
             removeCMIfExists();
         });
 
@@ -29,7 +39,6 @@ export class GalleryOS {
         console.log(`Cache length at start is ${this.cache.length}`);
 
         for (const file of files) {
-
             this.createImageDataObj(file, files);
         }
 
@@ -41,14 +50,20 @@ export class GalleryOS {
         const imageData = new ImageData(file);
         imageData.galleryOS = this;
 
-        imageData.addEventListener('complete', () => {
+        imageData.addEventListener('complete', async () => {
 
             this.inputCounter++;
             this.addToCache(imageData);
             this.renderImageDataObj(imageData);
 
+            imageData.imageElement.addEventListener('click', () => {
+                imageData.viewLarger();
+            });
+
             if (this.inputCounter === files.length) {
                 console.log(`${this.inputCounter} image(s) added`);
+
+                console.log(`Finished loading images`);
                 console.log(`Cache length is now: ${this.cache.length}`);
             }
         });
@@ -76,6 +91,7 @@ export class GalleryOS {
     }
 
     renderImageDataObj(imageData) {
+        this.mode = "all-cached";
         this.appendToGallery(imageData);
     }
 
@@ -108,8 +124,13 @@ export class GalleryOS {
 
     addToSelected(imageData) {
         //
+        console.log(`Selected was: [${this.selected}]`);
+
         const idx = this.cache.indexOf(imageData);
+
         this.selected.push(idx);
+        this.selected.sort();
+
         console.log(`Selected is now: [${this.selected}]`);
     }
 
@@ -117,9 +138,61 @@ export class GalleryOS {
         imageData.imageElement.classList.add("blinking-border");
     }
 
+    unmarkSelected(imageData) {
+        imageData.imageElement.classList.remove('blinking-border');
+    }
+
+    deselectOne(ix) {
+        console.log(`Selection was: [${this.selected}]`);
+        
+        if (this.selected.includes(ix)) {
+
+            this.selected.splice(this.selected.indexOf(ix), 1);
+
+            // redistribute pointers if target shifts
+            for (const selection of this.selected) {
+                // shift happens starting here 
+                if (ix < selection) {
+                    this.selected[this.selected.indexOf(selection)] -= 1;
+                }
+            }
+        } else {
+            for (const selection of this.selected) {
+                if (ix < selection) {
+                    this.selected[this.selected.indexOf(selection)] -= 1;
+                }
+            }
+        }
+
+        this.selected.sort();
+        console.log(`Selection is now: [${this.selected}]`);
+    }
+
+    deselectAll() {
+        if (this.selected.length > 0) {
+            while (this.selected.length > 0) {
+                const imageData = this.selected.pop();
+                this.unmarkSelected(imageData);
+            }
+        }
+    }
+
     deleteOne(imageData) {
-        imageData.rmvFromParentNode();
-        imageData.rmvFromCacheArray(this.cache);
+        console.log(`galleryElem childNodes length was: ${this.galleryElem.childNodes.length}`);
+
+        const idx = this.cache.indexOf(imageData);
+
+        if (this.selected.includes(idx)) {
+
+            imageData.rmvFromParentNode();
+            imageData.rmvFromCacheArray(this.cache);
+
+        } else {
+            imageData.rmvFromParentNode();
+            imageData.rmvFromCacheArray(this.cache);
+        }
+
+        console.log(`galleryElem childNodes length is now: ${this.galleryElem.childNodes.length}`);
     }
 
     deleteSelected() {
@@ -133,9 +206,12 @@ export class GalleryOS {
     }
 
     searchBtnActions(event) {
+        
         console.log(event.target); // search btn
+        
         if (this.cache.length > 0) {
             const query = prompt("Enter tag to search for.");
+
             if (query) {
                 for (const imageData of this.cache) {
                     if (imageData.hasTag(query)) {
@@ -147,6 +223,7 @@ export class GalleryOS {
                 if (this.selected.length > 0) {
                     // display results
                     this.displaySelected();
+                    this.mode = "selected";
                 } else {
                     console.error(`NO RESULTS`);
                 }

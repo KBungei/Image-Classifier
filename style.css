@@ -1,4 +1,4 @@
-* {
+body {
     font-family: "Brush Script MT", cursive;
 }
 
@@ -15,7 +15,7 @@ h1 {
     padding: 1rem;
 }
 
-.container {
+.main-container {
     width: 100%;
     margin: 0 auto;
 }
@@ -23,6 +23,7 @@ h1 {
 #gallery {
     display: flex;
     flex-wrap: wrap;
+    width: calc(100%);
 }
 
 #gallery img {
@@ -44,15 +45,15 @@ h1 {
 
 .contextmenu {
     display: flex;
-    max-width: 20rem;
     flex-wrap: wrap;
+    max-width: 20rem;
 }
 
 .nav-menu li, .contextmenu li {
     background-color: limegreen;
     border: .1em solid blueviolet;
-    border-radius: .5rem;
-    box-shadow: 0 .5rem 1rem blueviolet;
+    border-radius: 1rem;
+    box-shadow: 0 .3rem .5rem blueviolet;
     padding: .5rem 0;
     text-align: center;
     transition: 0.5s linear;
@@ -63,26 +64,34 @@ h1 {
     background: blueviolet;
 }
 
+.larger-view-info {
+    font-family: Arial;
+}
+
 #file-input {
     display: none;
 }
 
 .blinking-border {
-    box-shadow: 0 .5rem 1rem red;
+    /* box-shadow: 0 .5rem 1rem red; */
     animation: blink 1s linear infinite;
 }
 
 @keyframes blink {
     0% {
         border-style: dashed;
-        border-color: rgb(196, 60, 196);
+        border-color: yellow;
     }
     50% {
         border-style: solid;
-        border-color: rgb(90, 13, 90);
+        border-color: orange;
     }
     100% {
         border-style: dashed;
-        border-color: rgb(247, 6, 6);
+        border-color: red;
     }
+}
+
+@media screen and (max-width: 767px) {
+    /* */    
 }

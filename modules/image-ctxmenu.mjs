@@ -23,7 +23,7 @@ export class ImageCtxMenu {
             "Delete Image",
             "Delete Selected",
             "Download Image",
-            "Save Image"
+            "Save Image",
         ];
     }
 
@@ -46,6 +46,7 @@ export class ImageCtxMenu {
 
             this.cmelem.appendChild(li);
         }
+
         document.body.appendChild(this.cmelem);
     }
 

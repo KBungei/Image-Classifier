@@ -1,3 +1,5 @@
+import { ImageLargerView } from "./larger-view-elem.mjs";
+
 class Resolution {
     constructor(w, h) {
         this.width = w;
@@ -31,6 +33,10 @@ function calcDiagonal(w, h) {
     return Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2));
 }
 
+function calcDiagDeviation(imageDiag, standardDiag) {
+    return (imageDiag - standardDiag) / standardDiag * 100;
+}
+
 function classifyImageQuality(diagonal) {
 
     const diag144p = res144p.diag;
@@ -43,24 +49,80 @@ function classifyImageQuality(diagonal) {
     const diag2160p = res2160p.diag; // 4K
     const diag4320p = res4320p.diag; // 8K
 
+    const resDiags = [ 
+        diag144p, 
+        diag240p,
+        diag360p,
+        diag480p,
+        diag720p,
+        diag1080p,
+        diag1440p,
+        diag2160p,
+        diag4320p,
+    ];
+
     const diag = diagonal;
 
-    if (diag >= diag4320p) { return "4320p (8K) +"; }
-    else if (diag >= diag2160p) { return "2160p (4K)"; }
-    else if (diag >= diag1440p) { return "1440p"; }
-    else if (diag >= diag1080p) { return "1080p"; }
-    else if (diag >= diag720p) { return "720p"; }
-    else if (diag >= diag480p) { return "480p"; }
-    else if (diag >= diag360p) { return "360p"; }
-    else if (diag >= diag240p) { return "240p"; }
-    else if (diag >= diag144p) { return "144p"; }
-    else { return "< 144p"; }
+    // Euclidean distance
+    const calcEucliDistance = (imgDiag, resDiag) => {
+        return Math.sqrt((imgDiag - resDiag) * (imgDiag - resDiag));
+    };
+
+    const normalizeDistances = (distances) => {
+        const sum = distances.reduce((a, b) => a + b);
+        return distances.map(distance => distance / sum);
+    };
+
+    const classifyImage = (distances) => {
+        const minDistance = Math.min(...distances);
+        const index = distances.indexOf(minDistance);
+
+        switch (index) {
+            case 0:
+                return `144p (\u2325 ${distances[0]})`;
+            case 1:
+                return `240p (\u2325 ${distances[1]})`;
+            case 2:
+                return `360p (\u2325 ${distances[2]})`;
+            case 3:
+                return `480p (\u2325 ${distances[3]})`;
+            case 4:
+                return `720p (\u2325 ${distances[4]})`;
+            case 5:
+                return `1080p (\u2325 ${distances[5]})`;
+            case 6:
+                return `1440p (2K) (\u2325 ${distances[6]})`;
+            case 7:
+                return `2160p (4K) (\u2325 ${distances[7]})`;
+            case 8:
+                return `4320p (8K) (\u2325 ${distances[8]})`;
+        }
+    };
+
+    let distances = [];
+
+    resDiags.forEach((resDiag) => {
+        const distance = calcEucliDistance(diag, resDiag);
+        distances.push(distance);
+    });
+
+    distances = normalizeDistances(distances);
+
+    return classifyImage(distances);
 }
+
+
+//
+//
+// ImageData
+//
+//
 
 export class ImageData {
     constructor(file) {
-        // properties available from file
+        
         if (file && file.type.startsWith("image/")) {
+            // properties available from file
             this.name = file.name;
             this.nameExtnless = this.removeExtension();
             this.type = file.type;
@@ -119,11 +181,55 @@ export class ImageData {
         };
     }
 
+    viewLarger() {
+
+        const clearLargeViews = () => {
+            // clean up unclosed instances
+            for (const instance of document.querySelectorAll('ctm-larger-view')) {
+                document.body.removeChild(instance);
+            }
+        };
+
+        const customDefLargerView = () => {
+            // first time define, otherwise don't
+            if (!customElements.get('ctm-larger-view')) {
+                customElements.define('ctm-larger-view', ImageLargerView);
+            }
+        };
+
+        if (this.galleryOS.mode === 'all-cached') {
+
+            clearLargeViews();
+            customDefLargerView();
+
+            const largerView = new ImageLargerView(this.getIxInCache(), this.galleryOS.cache, this.galleryOS.mode);
+            document.body.appendChild(largerView);
+
+
+        } else if (this.galleryOS.mode === 'selected') {
+
+            clearLargeViews();
+            customDefLargerView();
+
+            const largerView = new ImageLargerView(this.getIxInSelected(), this.galleryOS.selected, this.galleryOS.mode);
+            document.body.appendChild(largerView);
+        }
+        
+    }
+
+    getIxInSelected() {
+        return this.galleryOS.selected.indexOf(this.galleryOS.cache.indexOf(this));
+    }
+
+    getIxInCache() {
+        return this.galleryOS.cache.indexOf(this);
+    }
+
     getExtension() {
         const regex = /(?<extension>\.[a-zA-Z0-9]+)$/;
         const match = regex.exec(this.name);
         if (match) {
-            return match.groups.extension;
+            return match.groups.extension.substring(1);
         } else {
             console.error(`Current file name has no extension.`);
             return null;
@@ -156,25 +262,77 @@ export class ImageData {
             console.log(`Cache length was: ${arr.length}`);
 
             const ix = arr.indexOf(this);
+            
             arr.splice(ix, 1);
+
+            this.galleryOS.deselectOne(ix);
 
             console.log(`Cache length is now: ${arr.length}`);
         } else {
-            console.error(`EITHER: image not in cache OR cache arg is not array like.`);
+            console.error(`EITHER: image not in cache OR arr arg is not array like.`);
         }
         
     }
 
     stringify() {
         const string = `Name: '${this.name}'` +
-            `\nSize: ${this.size} bytes` +
+            `\nSize: ${this.convertSizeBytesToKb()} KB` +
             `\nType: '${this.type}'` +
             `\nExtension: '${this.getExtension()}'` +
+            `\nWidth: '${this.width}'` +
+            `\nHeight: '${this.height}'` +
             `\nQuality: '${this.quality}'` +
             `\nCaption: '${this.caption}'` +
             `\nTags: [${this.tags.toString()}]`;
 
         return string;
+    }
+
+    getPropertiesAsHTML() {
+        const string = /* HTML */ ` <table>
+            <tr>
+              <th>Name:</th>
+              <td>${this.name}</td>
+            </tr>
+            <tr>
+              <th>Size:</th>
+              <td>${this.convertSizeBytesToKb()} KB</td>
+            </tr>
+            <tr>
+              <th>Type:</th>
+              <td>${this.type}</td>
+            </tr>
+            <tr>
+              <th>Extension:</th>
+              <td>${this.getExtension()}</td>
+            </tr>
+            <tr>
+              <th>Width:</th>
+              <td>${this.width}</td>
+            </tr>
+            <tr>
+              <th>Height:</th>
+              <td>${this.height}</td>
+            </tr>
+            <tr>
+              <th>Quality:</th>
+              <td>${this.quality}</td>
+            </tr>
+            <tr>
+              <th>Caption:</th>
+              <td>${this.caption}</td>
+            </tr>
+            <tr>
+              <th>Tags:</th>
+              <td>[${this.tags.toString()}]</td>
+            </tr>
+          </table>`;
+
+        return string;
+    }
+
+    convertSizeBytesToKb() {
+        return (this.size / 1024).toFixed(2);
     }
 
     addCaption(caption) {
@@ -192,7 +350,7 @@ export class ImageData {
     hasTag(tag) {
         if (tag) {
             const queryTag = filterString(tag);
-            return this.tags.includes(queryTag);
+            return this.tags.includes(queryTag); // true
         } else {
             console.error(`null value arg was passed`);
             return false;
